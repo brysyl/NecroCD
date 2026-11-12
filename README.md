@@ -95,14 +95,14 @@ Prerequisites
 git clone [https://github.com/brysyl/NecroCD.git](https://github.com/brysyl/NecroCD.git)
 cd necrocd
 ```
-3. Run the Backend
+2. Run the Backend
 
 ```
 cd backend
 pip install -r requirements.txt
 uvicorn main:app --reload --port 8000
 ```
-5. Run the Frontend
+3. Run the Frontend
 ```
 cd ../frontend
 npm install
