@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "docker-daemon": {
+      "command": "python",
+      "args": ["-m", "mcp_docker_bridge"],
+      "enabled": true
+    },
+    "git-graveyard": {
+      "command": "node",
+      "args": ["node_modules/@modelcontextprotocol/server-git"],
+      "enabled": true
+    }
+  }
+}
