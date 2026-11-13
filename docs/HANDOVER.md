@@ -26,17 +26,18 @@ flowchart LR
 | Dashboard | `frontend/app/page.tsx`, `frontend/components/`, `frontend/lib/` |
 | MCP server | `mcp/server.py`, `.kiro/settings/mcp.json` |
 | Hooks | `.kiro/hooks/`, `scripts/install-hooks.sh` |
-| DB schema (not wired in) | `supabase/migrations/0001_necrocd_schema.sql` |
+| DB schema and client | `supabase/migrations/0001_necrocd_schema.sql`, `backend/db/supabase_client.py` |
 | Deploy blueprint | `render.yaml` |
 | Release tagging | `scripts/release-tag.sh` |
 
 ## 2. Test suites (measured)
 
-Run on this branch with Python 3.11.15: `cd backend && .venv/bin/pytest -q` gave **18 passed, 1 warning** (a Starlette deprecation notice about `httpx`).
+Run on this branch with Python 3.11.15: `cd backend && .venv/bin/pytest -q` gave **22 passed, 1 warning** (a Starlette deprecation notice about `httpx`).
 
 | File | Tests | Covers |
 | :--- | :--- | :--- |
 | `backend/tests/test_all.py` | 11 | analyzer findings and syntax-rot handling, transformer idempotence and formatting preservation, router/component generators, Latin translation, URL validation, grave listing, sandbox flags and failure handling (Docker client mocked), refactor loop events, REST and WebSocket API |
+| `backend/tests/test_e2e_exorcism.py` | 4 | end to end flow: async clone of a temp git repo, libcst parse, refactor loop, mocked sandbox, Supabase logging against a fake in-memory client that enforces the migration's columns and foreign keys |
 | `backend/tests/test_mcp_hooks.py` | 7 | MCP tools and path allowlist, ref round trip and boundary escapes, MCP config, pre-commit hook output and strict mode, idempotent hook installer, static checks of the SQL schema and `render.yaml` |
 
 Frontend: `npx tsc --noEmit` exited 0, and `npm ci --include=dev && npm run build` succeeded (static route `/`, 92.7 kB first load JS). There are no frontend unit tests.
@@ -104,8 +105,8 @@ Verified in this audit: the `/health`, `/api/graves` and `/api/telemetry/polterg
 ## 6. Not verified
 
 * **Docker sandbox execution:** tests use a mocked Docker client; no real container was run (no daemon available).
-* **Supabase / Postgres:** the migration was never applied to a real database, and the backend does not use Supabase at runtime.
+* **Supabase / Postgres:** persistence is wired (`backend/db/supabase_client.py`) but untested against a real database; the migration was never applied to a real Postgres instance. Tests use a fake in-memory client.
 * **Live Render deploy:** `render.yaml` is only statically checked.
-* **PR merge and tag:** PR #1 is not merged by this work and the tag was not created. The release script's success path (tag and push) was not exercised.
+* **Release:** PR #1 is merged and the `v1.0.0-kiroween` tag exists on its merge commit, but the tag is unsigned. The release script's success path (tag and push) was not exercised.
 * **Browser rendering:** the 3D scene and poltergeist effect were not visually inspected in this audit.
 * **Security scanning:** only `npm audit` was run.

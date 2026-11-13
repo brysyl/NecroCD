@@ -97,7 +97,7 @@ This project was built with Kiro AI agents, using Kiro specs, steering, hooks an
 * **Supabase:** persistence is wired but untested against a real database. The migration was never applied to a real Postgres instance.
 * **3D visuals:** the Three.js scene and poltergeist effect have not been verified in a browser. The "expected" visuals come from the code.
 * **No live deployment:** `render.yaml` is only statically checked.
-* **Tests:** 22 backend tests pass, using mocks and static checks. There are no frontend unit tests. Some older text in README.md and docs/HANDOVER.md still says 18 tests.
+* **Tests:** 22 backend tests pass, using mocks and static checks. There are no frontend unit tests.
 * **MCP server:** used by Kiro only, not by the running app.
 * **Security:** `npm audit` reported 2 findings (1 high, 1 critical) that were not fixed. No Python vulnerability scan was run.
-* **Release:** PR #1 is not merged and the `v1.0.0-kiroween` tag has not been created.
+* **Release:** PR #1 is merged and the `v1.0.0-kiroween` tag exists, but it is unsigned.

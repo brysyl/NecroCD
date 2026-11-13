@@ -163,7 +163,7 @@ See [`.env.example`](.env.example).
 ## 🧪 Testing
 
 ```bash
-cd backend && pytest -q              # 18 tests
+cd backend && pytest -q              # 22 tests
 cd frontend && npx tsc --noEmit && npm run build
 ```
 
@@ -173,7 +173,7 @@ Backend tests cover the AST analyzer, transformers, ingestion, sandbox flags (wi
 
 ## 🏷 Release
 
-After PR #1 is merged, `scripts/release-tag.sh` creates and pushes the annotated tag `v1.0.0-kiroween` on the PR's merge commit. By default it only reports; it changes nothing without `--execute`.
+PR #1 is merged and the annotated tag `v1.0.0-kiroween` exists on its merge commit (the tag is unsigned). `scripts/release-tag.sh` automates this step; by default it only reports and changes nothing without `--execute`, and it refuses when the tag already exists.
 
 ```bash
 scripts/release-tag.sh --dry-run
