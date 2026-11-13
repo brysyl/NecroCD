@@ -1,0 +1,7 @@
+{
+  "name": "NecroCD Exorcism on Save",
+  "version": "1.0.0",
+  "description": "Run the AST analyzer on Python files when saved",
+  "when": { "type": "fileEdited", "patterns": ["**/*.py"] },
+  "then": { "type": "askAgent", "prompt": "Run the NecroCD analyzer on the saved file and summarize any legacy imports, deprecated calls or syntax rot." }
+}

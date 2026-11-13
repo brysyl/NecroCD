@@ -1,13 +1,9 @@
 {
   "mcpServers": {
-    "docker-daemon": {
+    "necrocd": {
       "command": "python",
-      "args": ["-m", "mcp_docker_bridge"],
-      "enabled": true
-    },
-    "git-graveyard": {
-      "command": "node",
-      "args": ["node_modules/@modelcontextprotocol/server-git"],
+      "args": ["mcp/server.py"],
+      "env": { "NECROCD_ALLOWED_ROOTS": "." },
       "enabled": true
     }
   }
