@@ -47,30 +47,25 @@
 ```text
 necrocd/
 ├── .kiro/
-│   ├── hooks/
-│   │   └── pre-commit-exorcism.py
-│   ├── settings/
-│   │   └── mcp.json
-│   ├── specs/
-│   │   └── 01-ast-refactor-engine.md
-│   └── steering/
-│       └── tech-stack.md
+│   ├── hooks/                 # pre-commit, post-merge, exorcism hook
+│   ├── settings/mcp.json
+│   ├── specs/                 # 01-03 design contracts
+│   └── steering/tech-stack.md
 ├── backend/
 │   ├── main.py
-│   ├── parser/
-│   │   └── ast_analyzer.py
-│   ├── sandbox/
-│   │   └── docker_runner.py
+│   ├── models.py  events.py  poltergeist.py
+│   ├── ingest/  parser/  refactor/  sandbox/  routers/
+│   ├── tests/
 │   └── requirements.txt
 ├── frontend/
-│   ├── app/
-│   │   ├── layout.tsx
-│   │   ├── page.tsx
-│   │   └── globals.css
-│   ├── components/
-│   │   ├── CemeteryCanvas.tsx
-│   │   └── PoltergeistOverlay.tsx
+│   ├── app/                   # layout.tsx, page.tsx, globals.css
+│   ├── components/            # CemeteryCanvas.tsx, PoltergeistOverlay.tsx
+│   ├── lib/                   # useTelemetry.ts, types.ts
 │   └── package.json
+├── mcp/server.py
+├── scripts/install-hooks.sh
+├── supabase/migrations/
+├── render.yaml                # Render blueprint (backend + frontend)
 └── README.md
 ```
 
@@ -108,7 +103,18 @@ cd ../frontend
 npm install
 npm run dev
 ```
-Open http://localhost:3000 to enter the NecroCD SRE Control Room.
+Open http://localhost:3000 to enter the NecroCD SRE Control Room. The frontend reads
+`NEXT_PUBLIC_API_URL` (default `http://localhost:8000`); if the backend is unreachable it
+falls back to mock graves, and the "Simulate Poltergeist" button triggers the effect locally.
+
+4. Verify
+
+```
+cd backend && pytest
+cd ../frontend && npx tsc --noEmit && npm run build
+```
+
+Deployment: `render.yaml` defines both services for Render.
 ---
 ## 🛡️ License
 Distributed under the MIT License. See LICENSE for more information.
