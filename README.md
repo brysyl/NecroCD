@@ -90,10 +90,10 @@ flowchart LR
     Graves --> UI
     WS --> UI[Next.js + Three.js cemetery]
     MCP[mcp/server.py] -.-> Repo
-    DB[(Supabase schema, reserved)] -.-> Events
+    Loop --> DB[(Supabase via db/supabase_client.py)]
 ```
 
-Dotted edges are not wired at runtime yet: the MCP server is used by Kiro, and the Supabase schema exists in `supabase/migrations/` but the backend does not read or write it yet.
+The dotted edge is not wired at runtime: the MCP server is used by Kiro. The refactor loop writes to Supabase (schema in `supabase/migrations/`) when `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are set; otherwise persistence is skipped.
 
 ---
 
@@ -156,7 +156,7 @@ See [`.env.example`](.env.example).
 | `NECROCD_REPO` | backend | No (default: this checkout) | Repo listed by `/api/graves` |
 | `NECROCD_ALLOWED_ROOTS` | MCP server | No (default: this checkout) | Path allowlist for MCP git tools |
 | `NECROCD_STRICT` | pre-commit hook | No | `1` blocks commits on high severity findings |
-| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | none yet | No | Reserved for Supabase persistence; not read by any code today |
+| `SUPABASE_URL`, `SUPABASE_SERVICE_KEY` | none (persistence off) | No | Supabase persistence of telemetry, exorcism logs, metrics and audit trails; if unset, writes are skipped with a warning |
 
 ---
 

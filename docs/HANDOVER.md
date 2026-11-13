@@ -92,7 +92,7 @@ Verified in this audit: the `/health`, `/api/graves` and `/api/telemetry/polterg
 | :--- | :--- |
 | Backend runtime dependencies | Pinned to the versions in the test venv (`backend/requirements.txt`); test tools split into `requirements-dev.txt` |
 | Frontend dependencies | `package-lock.json` is tracked; `render.yaml` uses `npm ci --include=dev` so Tailwind and TypeScript types are present at build time |
-| Environment variables | Documented in `.env.example` and the README table; `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are reserved and not read by any code |
+| Environment variables | Documented in `.env.example` and the README table; `SUPABASE_URL` and `SUPABASE_SERVICE_KEY` are read by `backend/db/supabase_client.py`; when unset, persistence is a no-op |
 | `npm audit` | 2 findings (1 high, 1 critical) on the current lockfile; the high one is PostCSS. Not fixed here because the suggested fix is a forced, possibly breaking upgrade. Review before public production use |
 | Python vulnerability scan | Not run |
 | Release script | `bash -n` passes; shellcheck is not installed here |

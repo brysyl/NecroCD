@@ -15,7 +15,7 @@ services:
         sync: false
       - key: NECROCD_ALLOWED_ROOTS
         value: .
-      # Reserved for Supabase persistence; not read by the backend code yet.
+      # Used by backend/db/supabase_client.py; persistence is skipped if unset.
       - key: SUPABASE_URL
         sync: false
       - key: SUPABASE_SERVICE_KEY
