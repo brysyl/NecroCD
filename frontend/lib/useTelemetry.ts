@@ -1,10 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { Grave, TelemetryEvent } from "./types";
+import {
+  isGraveList,
+  isHauntingEvent,
+  isTelemetryEvent,
+  isTelemetryEventList,
+  type Grave,
+  type TelemetryEvent,
+} from "./types";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const WS = API.replace(/^http/, "ws") + "/ws/telemetry";
+const MOCK_INTERVAL_MS = 4000;
 
 export const MOCK_GRAVES: Grave[] = [
   { branch: "feature/urllib2-port", last_commit: "a1b2c3d4e5", last_commit_date: "2022-03-01", staleness_days: 900, status: "broken", findings: 7 },
@@ -19,40 +27,81 @@ const MOCK_TRACE = "Traceback (most recent call last):\n  File \"app.py\", line 
 const MOCK_LATIN =
   "Vestigium retrorsum (ultima vocatio):\n  Fasciculus \"app.py\", linea 3\nErrorModuliNonInventi: Modulus 'urllib2' non est inventus.\nRequiescat in pace.";
 
-function mockPoltergeist(): TelemetryEvent {
-  return {
-    id: `mock-${Date.now()}`,
-    type: "poltergeist",
-    ts: new Date().toISOString(),
-    payload: { cause: "test failure", original: MOCK_TRACE, latin: MOCK_LATIN, severity: "high" },
-  };
+let seq = 0;
+function mockEvent(type: string, payload: Record<string, unknown>): TelemetryEvent {
+  seq += 1;
+  return { id: `mock-${Date.now()}-${seq}`, type, ts: new Date().toISOString(), payload };
 }
 
-export function useTelemetry() {
+function mockPoltergeist(cause: string): TelemetryEvent {
+  return mockEvent("poltergeist", { cause, original: MOCK_TRACE, latin: MOCK_LATIN, severity: "high" });
+}
+
+/** Cycles through realistic backend event shapes; a haunting every 5th tick. */
+function nextMockEvent(tick: number): TelemetryEvent {
+  const g = MOCK_GRAVES[tick % MOCK_GRAVES.length];
+  switch (tick % 5) {
+    case 0:
+      return mockEvent("grave.discovered", { branch: g.branch, status: g.status, staleness_days: g.staleness_days });
+    case 1:
+      return mockEvent("exorcism.started", { target: `${g.branch}/app.py` });
+    case 2:
+      return mockEvent("exorcism.step", { attempt: 1, stage: "test" });
+    case 3:
+      return mockPoltergeist(tick % 10 === 3 ? "test failure" : "dependency error");
+    default:
+      return mockEvent("exorcism.completed", { target: `${g.branch}/app.py`, ok: false, attempts: 1, findings: g.findings });
+  }
+}
+
+export interface Telemetry {
+  graves: Grave[];
+  events: TelemetryEvent[];
+  eventCount: number;
+  poltergeist: TelemetryEvent | null;
+  connected: boolean;
+  mock: boolean;
+  simulate: () => void;
+  dismiss: () => void;
+}
+
+export function useTelemetry(): Telemetry {
   const [graves, setGraves] = useState<Grave[]>(MOCK_GRAVES);
   const [events, setEvents] = useState<TelemetryEvent[]>([]);
+  const [eventCount, setEventCount] = useState(0);
   const [poltergeist, setPoltergeist] = useState<TelemetryEvent | null>(null);
   const [connected, setConnected] = useState(false);
-  const [mock, setMock] = useState(true);
+  const [mockGraves, setMockGraves] = useState(true);
   const retry = useRef(0);
 
   const handle = useCallback((e: TelemetryEvent) => {
     setEvents((prev) => [e, ...prev].slice(0, 100));
-    if (e.type === "poltergeist") setPoltergeist(e);
+    setEventCount((n) => n + 1);
+    if (isHauntingEvent(e)) setPoltergeist(e);
   }, []);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`${API}/api/graves`)
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
-      .then((data: Grave[]) => {
-        if (!cancelled && Array.isArray(data) && data.length) {
+      .then((data: unknown) => {
+        if (!cancelled && isGraveList(data) && data.length > 0) {
           setGraves(data);
-          setMock(false);
+          setMockGraves(false);
         }
       })
       .catch(() => {
-        /* keep mock data */
+        /* keep mock graves */
+      });
+    fetch(`${API}/api/telemetry`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((data: unknown) => {
+        if (!cancelled && isTelemetryEventList(data)) {
+          setEvents((prev) => (prev.length ? prev : [...data].reverse().slice(0, 100)));
+        }
+      })
+      .catch(() => {
+        /* backend offline */
       });
 
     let ws: WebSocket | null = null;
@@ -63,10 +112,13 @@ export function useTelemetry() {
       ws.onopen = () => {
         retry.current = 0;
         setConnected(true);
+        setEvents((prev) => prev.filter((e) => !e.id.startsWith("mock-")));
       };
-      ws.onmessage = (m) => {
+      ws.onmessage = (m: MessageEvent<unknown>) => {
+        if (typeof m.data !== "string") return;
         try {
-          handle(JSON.parse(m.data) as TelemetryEvent);
+          const parsed: unknown = JSON.parse(m.data);
+          if (isTelemetryEvent(parsed)) handle(parsed);
         } catch {
           /* ignore malformed frames */
         }
@@ -87,8 +139,19 @@ export function useTelemetry() {
     };
   }, [handle]);
 
-  const simulate = useCallback(() => handle(mockPoltergeist()), [handle]);
+  // Mock telemetry keeps the UI alive while the websocket is unreachable; stops once connected.
+  useEffect(() => {
+    if (connected) return;
+    let tick = 0;
+    const id = setInterval(() => {
+      handle(nextMockEvent(tick));
+      tick += 1;
+    }, MOCK_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [connected, handle]);
+
+  const simulate = useCallback(() => handle(mockPoltergeist("test failure")), [handle]);
   const dismiss = useCallback(() => setPoltergeist(null), []);
 
-  return { graves, events, poltergeist, connected, mock, simulate, dismiss };
+  return { graves, events, eventCount, poltergeist, connected, mock: mockGraves || !connected, simulate, dismiss };
 }
