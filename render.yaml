@@ -1,0 +1,35 @@
+services:
+  - type: web
+    name: necrocd-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: CORS_ORIGINS
+        sync: false
+      - key: NECROCD_REPO
+        sync: false
+      - key: NECROCD_ALLOWED_ROOTS
+        value: .
+      # Used by backend/db/supabase_client.py; persistence is skipped if unset.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+
+  - type: web
+    name: necrocd-frontend
+    runtime: node
+    rootDir: frontend
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm run start
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
